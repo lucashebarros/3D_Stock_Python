@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warehouse 3D Visualization</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+
+  <!-- Import Map para configurar módulos -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.155.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.155.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.1;
+
+    // Luzes
+    const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(10, 20, 10).normalize();
+    scene.add(directionalLight);
+
+    // Função para criar prateleiras com itens
+    function createShelf() {
+      const shelfGroup = new THREE.Group();
+      const shelfHeight = 1.5;
+
+      for (let j = 0; j < 3; j++) {
+        const geometry = new THREE.BoxGeometry(5, 0.1, 2);
+        const material = new THREE.MeshBasicMaterial({ color: 0x8B4513 });
+        const layer = new THREE.Mesh(geometry, material);
+        layer.position.y = j * shelfHeight * 2;
+        shelfGroup.add(layer);
+
+        for (let k = -1; k <= 1; k++) {
+          const itemGeometry = new THREE.BoxGeometry(1, 1, 1);
+          const itemMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+          const item = new THREE.Mesh(itemGeometry, itemMaterial);
+          item.position.set(k * 2, j * shelfHeight * 2 + 0.5, 0);
+          shelfGroup.add(item);
+        }
+      }
+      return shelfGroup;
+    }
+
+    function createWarehouse() {
+      const warehouseGroup = new THREE.Group();
+      const rows = 4;
+      const cols = 4;
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const shelf = createShelf();
+          shelf.position.set(col * 8 - (cols * 4), 0, row * 12 - (rows * 6));
+          warehouseGroup.add(shelf);
+        }
+      }
+      return warehouseGroup;
+    }
+
+    const warehouse = createWarehouse();
+    scene.add(warehouse);
+
+    // Configuração do plano de chão
+    const floorGeometry = new THREE.PlaneGeometry(100, 100);
+    const floorMaterial = new THREE.MeshBasicMaterial({ color: 0xCCCCCC, side: THREE.DoubleSide });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = Math.PI / 2;
+    floor.position.y = -1;
+    scene.add(floor);
+
+    camera.position.set(0, 10, 40);
+    camera.lookAt(0, 5, 0);
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Ajuste de redimensionamento
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    });
+  </script>
+</body>
+</html>
